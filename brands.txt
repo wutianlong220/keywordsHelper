@@ -1,0 +1,46 @@
+# 品牌词库（Brand Blocklist）
+# ─────────────────────────────────────────────────────────────
+# 匹配规则：
+#   - 子串包含匹配（大小写不敏感）
+#   - 即：只要关键词中"包含"本库任意一行字符串，就归为 C 类
+#   - 例：库里有 "nike" → "nike shoes" / "nike air max" / "buy nike" 全部命中
+#
+# 维护方式：
+#   - 直接编辑本文件，一行一个品牌
+#   - # 开头的行为注释，不参与匹配
+#   - 空行忽略
+#
+# 注意：
+#   - 子串匹配会误伤（如 "apple" 会命中 "pineapple"）→ 添加短词时谨慎
+#   - 只放"世界级大品牌"（household brand）：法律风险 + SERP 霸屏 + 你打不赢
+#   - 中小品牌（如 zerogpt, grammarly）不放在这里 → 让 AI 分类判定为 B
+# ─────────────────────────────────────────────────────────────
+
+# 运动品牌
+nike
+adidas
+puma
+under armour
+
+# 餐饮品牌
+mcdonalds
+starbucks
+kfc
+subway
+coca cola
+pepsi
+
+# 科技/互联网巨头
+amazon
+google
+microsoft
+youtube
+facebook
+instagram
+tiktok
+twitter
+
+# 流媒体/娱乐
+netflix
+spotify
+disney

@@ -1,0 +1,31 @@
+# ── Python ───────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ── 虚拟环境 ─────────────────────────────
+venv/
+.venv/
+env/
+
+# ── 测试缓存 ─────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── macOS / Windows 临时文件 ─────────────
+.DS_Store
+Thumbs.db
+~$*.xlsx        # Excel 锁文件
+~$*.docx        # Word 锁文件
+
+# ── Claude Code 本地配置（个人，不入 git） ──
+.claude/
+
+# ── 隐私：inputs/ 研究关键词（保留目录） ──
+inputs/*
+!inputs/.gitkeep
+
+# ── 隐私：outputs/ Excel 结果 + 中间 JSON（保留目录） ──
+outputs/*
+!outputs/.gitkeep
