@@ -30,7 +30,11 @@ def parse_keywords(text: str) -> list[tuple[str, str]]:
     - 一行一个
     - 空行忽略
     - 重复关键词去重（按 keyword 大小写不敏感比较，保留首次）
+    - 损坏字符清洗：U+FFFD（UTF-8 替换符 \xef\xbf\xbd）→ '?'
+      （原始数据源偶尔用此字符占位；LLM 复制时容易丢失，导致 keyword 对账失败）
     """
+    # 清洗损坏字符（一次性替换全文本，比逐行替换更高效）
+    text = text.replace('\ufffd', '?')
     seen: set[str] = set()
     results: list[tuple[str, str]] = []
 

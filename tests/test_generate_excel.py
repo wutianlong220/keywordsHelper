@@ -84,21 +84,21 @@ class TestGenerate:
         assert result_path == out
         assert out.exists()
 
-    def test_12列(self, sample_results, tmp_path: Path):
+    def test_13列(self, sample_results, tmp_path: Path):
+        """v1.4：表格列数从 12 增至 13。"""
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
-        wb = load_workbook(out)
-        ws = wb.active
-        assert ws.max_column == 12
+        ws = load_workbook(out).active
+        assert ws.max_column == 13
 
     def test_表头内容(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        headers = [ws.cell(row=1, column=i).value for i in range(1, 13)]
+        headers = [ws.cell(row=1, column=i).value for i in range(1, 14)]
         assert headers == [
             "英文原文", "中文翻译", "搜索意图", "类型", "变现路径",
-            "建议", "目标用户", "收藏",
+            "建议", "目标用户", "收藏", "我的调研结论",   # v1.4 新增"我的调研结论"
             "intitle 检查", "SERP 检查", "谷歌趋势", "Ahrefs KD",
         ]
 
@@ -142,15 +142,16 @@ class TestGenerate:
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
+        # v1.4：列数 13，筛选范围 A1:M1
         assert ws.auto_filter.ref is not None
-        assert ws.auto_filter.ref.startswith("A1:")
+        assert ws.auto_filter.ref == "A1:M1"
 
     def test_超链接(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        # 第 2 行第 9 列（intitle）应有 hyperlink
-        cell = ws.cell(row=2, column=9)
+        # 第 2 行第 10 列（intitle，v1.4 后右移到第 10 列）应有 hyperlink
+        cell = ws.cell(row=2, column=10)
         assert cell.hyperlink is not None
         assert cell.hyperlink.target == sample_results[0]["urls"]["intitle"]
 
@@ -165,7 +166,7 @@ class TestGenerate:
         wb = load_workbook(out)
         ws = wb.active
         assert ws.max_row == 1
-        assert ws.max_column == 12
+        assert ws.max_column == 13
 
     def test_Sheet名(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
@@ -175,7 +176,7 @@ class TestGenerate:
 
 
 class TestRowColoring:
-    """验证行级着色（按「建议」）。"""
+    """验证行级着色（按「建议」）。v1.4 起覆盖范围扩展到 1~9 列（含调研列，不含收藏列）。"""
 
     def test_建议行_第1列浅绿(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
@@ -183,6 +184,14 @@ class TestRowColoring:
         ws = load_workbook(out).active
         # 第 4 行：thunderstorm tracker uk → 建议
         cell = ws.cell(row=4, column=1)
+        assert cell.fill.fgColor.rgb in ("00E2EFDA", "E2EFDA", "FFE2EFDA")
+
+    def test_建议行_调研列也浅绿(self, sample_results, tmp_path: Path):
+        """v1.4：行级着色覆盖到第 9 列（我的调研结论）。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        cell = ws.cell(row=4, column=9)  # 第 9 列 = 我的调研结论
         assert cell.fill.fgColor.rgb in ("00E2EFDA", "E2EFDA", "FFE2EFDA")
 
     def test_待研究行_第1列浅黄(self, sample_results, tmp_path: Path):
@@ -193,6 +202,14 @@ class TestRowColoring:
         cell = ws.cell(row=2, column=1)
         assert cell.fill.fgColor.rgb in ("00FFF2CC", "FFF2CC", "FFFFF2CC")
 
+    def test_待研究行_调研列也浅黄(self, sample_results, tmp_path: Path):
+        """v1.4：行级着色覆盖到第 9 列。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        cell = ws.cell(row=2, column=9)
+        assert cell.fill.fgColor.rgb in ("00FFF2CC", "FFF2CC", "FFFFF2CC")
+
     def test_跳过行_第1列浅灰(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
@@ -201,43 +218,52 @@ class TestRowColoring:
         cell = ws.cell(row=3, column=1)
         assert cell.fill.fgColor.rgb in ("00F2F2F2", "F2F2F2", "FFF2F2F2")
 
+    def test_跳过行_调研列也浅灰(self, sample_results, tmp_path: Path):
+        """v1.4：行级着色覆盖到第 9 列。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        cell = ws.cell(row=3, column=9)
+        assert cell.fill.fgColor.rgb in ("00F2F2F2", "F2F2F2", "FFF2F2F2")
+
 
 class TestLinkColumnColoring:
-    """验证链接列着色（覆盖行级）。链接列在 9-12（Q3 调整后位置）。"""
+    """验证链接列着色（覆盖行级）。v1.4 后链接列在 10~13 列。"""
 
     def test_intitle列_浅蓝(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        cell = ws.cell(row=2, column=9)
+        cell = ws.cell(row=2, column=10)
         assert cell.fill.fgColor.rgb in ("00DDEBF7", "DDEBF7", "FFDDEBF7")
 
     def test_SERP列_浅紫(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        cell = ws.cell(row=2, column=10)
+        cell = ws.cell(row=2, column=11)
         assert cell.fill.fgColor.rgb in ("00E4D7F0", "E4D7F0", "FFE4D7F0")
 
     def test_趋势列_浅橙(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        cell = ws.cell(row=2, column=11)
+        cell = ws.cell(row=2, column=12)
         assert cell.fill.fgColor.rgb in ("00FCE4D6", "FCE4D6", "FFFCE4D6")
 
     def test_Ahrefs列_浅绿(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        cell = ws.cell(row=2, column=12)
+        cell = ws.cell(row=2, column=13)
         assert cell.fill.fgColor.rgb in ("00E2EFDA", "E2EFDA", "FFE2EFDA")
 
 
 class TestFavoriteColumn:
-    """验证"收藏"列的固定深绿背景 + 白字加粗 + 列宽。"""
+    """验证"收藏"列的固定深绿背景 + 白字加粗 + 列宽。v1.4 后仍位于第 8 列（H 列），不右移。"""
 
     def test_收藏列有数据验证(self, sample_results, tmp_path: Path):
+        """v1.5：下拉框含'收藏'和'丢弃'两个选项。"""
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
@@ -245,13 +271,18 @@ class TestFavoriteColumn:
         assert len(dvs) >= 1
         dv = dvs[0]
         assert dv.type == "list"
+        # v1.5：应同时含"收藏"和"丢弃"
         assert "收藏" in dv.formula1
+        assert "丢弃" in dv.formula1
+        # v1.4：收藏列仍在 H 列，DataValidation 范围 H2:Hx
+        ranges = " ".join(str(s) for s in dv.sqref.ranges) if dv.sqref else ""
+        assert "H2" in ranges, f"DataValidation 范围应包含 H2，实际 {ranges!r}"
 
     def test_收藏列默认空(self, sample_results, tmp_path: Path):
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        # 所有数据行的"收藏"列（列 8）默认为空
+        # 所有数据行的"收藏"列（第 8 列 H 列）默认为空
         for row_idx in range(2, ws.max_row + 1):
             assert ws.cell(row=row_idx, column=8).value in (None, "")
 
@@ -259,10 +290,11 @@ class TestFavoriteColumn:
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
+        # v1.4：收藏列仍在第 8 列（H 列）
         assert ws.column_dimensions["H"].width == 8
 
     def test_收藏列_固定深绿背景_548235(self, sample_results, tmp_path: Path):
-        """v1.3：列 8 所有数据行都应有深绿 #548235 实色填充。"""
+        """v1.3：第 8 列（H 列）所有数据行都应有深绿 #548235 实色填充。"""
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
@@ -299,10 +331,11 @@ class TestFavoriteColumn:
         assert cf_count == 0, f"应无条件格式，实际 {cf_count} 条"
 
     def test_链接列固定宽度12(self, sample_results, tmp_path: Path):
+        """v1.4：链接列位于 J/K/L/M 列。"""
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
-        for col_letter in ["I", "J", "K", "L"]:
+        for col_letter in ["J", "K", "L", "M"]:
             assert ws.column_dimensions[col_letter].width == 12
 
     def test_英文原文列固定30(self, sample_results, tmp_path: Path):
@@ -311,3 +344,82 @@ class TestFavoriteColumn:
         generate(sample_results, out)
         ws = load_workbook(out).active
         assert ws.column_dimensions["A"].width == 30
+
+
+class TestResearchColumn:
+    """v1.4 新增：'我的调研结论'列（自由文本，第 9 列 I 列）。"""
+
+    def test_调研列默认空_数据行(self, sample_results, tmp_path: Path):
+        """item dict 无调研字段 → Excel 单元格默认空。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        for row_idx in range(2, ws.max_row + 1):
+            cell = ws.cell(row=row_idx, column=9)
+            assert cell.value in (None, ""), \
+                f"行{row_idx}: 调研列应为空，实际为 {cell.value!r}"
+
+    def test_调研列表头_我的调研结论(self, sample_results, tmp_path: Path):
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        assert ws.cell(row=1, column=9).value == "我的调研结论"
+
+    def test_调研列_行级着色_与同行建议列同色(self, sample_results, tmp_path: Path):
+        """row_fill 覆盖到第 9 列：浅绿/浅黄/浅灰各跑一行。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        # 建议行（第 4 行）→ 调研列应浅绿
+        assert ws.cell(row=4, column=9).fill.fgColor.rgb in ("00E2EFDA", "E2EFDA", "FFE2EFDA")
+        # 待研究行（第 2/5 行）→ 调研列应浅黄
+        assert ws.cell(row=2, column=9).fill.fgColor.rgb in ("00FFF2CC", "FFF2CC", "FFFFF2CC")
+        # 跳过行（第 3 行）→ 调研列应浅灰
+        assert ws.cell(row=3, column=9).fill.fgColor.rgb in ("00F2F2F2", "F2F2F2", "FFF2F2F2")
+
+    def test_调研列_自适应列宽(self, sample_results, tmp_path: Path):
+        """不固定宽度，按内容自适应（用户手填文本长度不定）。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        # 因为数据行默认空，列宽至少能容纳表头"我的调研结论"（6 个中文 = 12）
+        # 调研列在第 9 列（I 列）
+        col_width = ws.column_dimensions["I"].width
+        assert col_width >= 12, f"调研列宽度至少 12（容纳表头），实际 {col_width}"
+
+    def test_调研列_无DataValidation(self, sample_results, tmp_path: Path):
+        """调研列是自由文本，不应加下拉框。"""
+        out = tmp_path / "out.xlsx"
+        generate(sample_results, out)
+        ws = load_workbook(out).active
+        dvs = list(ws.data_validations.dataValidation)
+        # 唯一一条 DataValidation 应作用于 H 列（收藏），不应用于 I 列
+        for dv in dvs:
+            ranges = " ".join(str(s) for s in dv.sqref.ranges) if dv.sqref else ""
+            # 只有"收藏"列（H 列）有 DataValidation
+            assert "H2" in ranges
+            # 不应有 I/J/K/L/M 列引用（其他列不应有 DataValidation）
+            for col in ("I", "J", "K", "L", "M"):
+                assert f"{col}2" not in ranges, \
+                    f"调研列（I 列）不应有 DataValidation，但 {col}2 出现"
+
+    def test_用户填写调研后_仍能正常生成(self, tmp_path: Path):
+        """即使 item 没提供研究字段也不应崩 —— 用户只在 Excel 端手填。"""
+        results = [{
+            "keyword": "x",
+            "translation": "x",
+            "intent": "信息型",
+            "type": "内容",
+            "monetization": "AdSense",
+            "advice": "建议",
+            "target_user": "x",
+            "urls": {
+                "intitle": "http://x", "serp": "http://x",
+                "trends": "http://x", "ahrefs": "http://x",
+            },
+        }]
+        out = tmp_path / "out.xlsx"
+        generate(results, out)  # 不应抛 KeyError
+        ws = load_workbook(out).active
+        # 调研列单元格保持空（实现不主动写入数据）
+        assert ws.cell(row=2, column=9).value in (None, "")
