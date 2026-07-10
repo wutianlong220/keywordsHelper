@@ -263,7 +263,7 @@ class TestFavoriteColumn:
     """验证"收藏"列的固定深绿背景 + 白字加粗 + 列宽。v1.4 后仍位于第 8 列（H 列），不右移。"""
 
     def test_收藏列有数据验证(self, sample_results, tmp_path: Path):
-        """v1.5：下拉框含'收藏'和'丢弃'两个选项。"""
+        """v1.6：下拉框含'收藏''丢弃''红利'三个选项。"""
         out = tmp_path / "out.xlsx"
         generate(sample_results, out)
         ws = load_workbook(out).active
@@ -271,9 +271,10 @@ class TestFavoriteColumn:
         assert len(dvs) >= 1
         dv = dvs[0]
         assert dv.type == "list"
-        # v1.5：应同时含"收藏"和"丢弃"
+        # v1.6：应同时含"收藏""丢弃""红利"
         assert "收藏" in dv.formula1
         assert "丢弃" in dv.formula1
+        assert "红利" in dv.formula1
         # v1.4：收藏列仍在 H 列，DataValidation 范围 H2:Hx
         ranges = " ".join(str(s) for s in dv.sqref.ranges) if dv.sqref else ""
         assert "H2" in ranges, f"DataValidation 范围应包含 H2，实际 {ranges!r}"

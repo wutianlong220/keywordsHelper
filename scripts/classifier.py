@@ -165,6 +165,38 @@ def _apply_brand_advice(results, brand_set_lower):
     return overwritten
 
 
+# ── 变现路径归一化（v1.6）─────────────────────────────
+# LLM 自由发挥会出现顺序/空格不一致，如：
+#   "AdSense / 联盟" / "联盟 / AdSense" / "AdSense/联盟"
+#   "AdSense / 联盟 / 电商" / "AdSense / 电商 / 联盟"
+# 归一化策略：按 prompt 枚举的固定顺序排序 + 统一分隔符 " / "。
+_MONETIZATION_ORDER = ["SaaS", "AdSense", "联盟", "电商", "导航", "待定"]
+_MONETIZATION_RANK = {v: i for i, v in enumerate(_MONETIZATION_ORDER)}
+
+
+def _canon_monetization(value: str) -> str:
+    """归一化变现路径字符串。
+
+    规则：
+    1. 按 "/" 拆分
+    2. 每项去前后空格；空字符串过滤掉
+    3. 按 _MONETIZATION_RANK 排序（未知项排最后）
+    4. 用统一分隔符 " / "（前后各一空格）连接
+
+    例：
+        "AdSense / 联盟"      → "AdSense / 联盟"
+        "联盟 / AdSense"      → "AdSense / 联盟"
+        "AdSense/联盟"        → "AdSense / 联盟"
+        "AdSense / 联盟 / 电商" → "AdSense / 联盟 / 电商"
+        ""                    → ""
+    """
+    if not value:
+        return ""
+    items = [s.strip() for s in value.split("/") if s.strip()]
+    items.sort(key=lambda x: _MONETIZATION_RANK.get(x, 999))
+    return " / ".join(items)
+
+
 # ── 找最新输入文件 ──────────────────────────────────
 def find_latest_input():
     candidates = sorted(Path("inputs").glob("keywords-*.txt"), reverse=True)
@@ -255,6 +287,16 @@ def run(input_path, batch_size=BATCH_SIZE_DEFAULT, max_batches=None, reset=False
     brand_kw_set = {kw.lower() for kw, _ in brand_hits}
     overwritten = _apply_brand_advice(all_results, brand_kw_set)
     print(f"  → 合并 {len(all_results)} 条；覆盖品牌 advice {overwritten} 条 → {_BRAND_ADVICE!r}")
+
+    # v1.6：变现路径归一化（统一分隔符 + 顺序）
+    canon_count = 0
+    for item in all_results:
+        old = item.get("monetization", "")
+        new = _canon_monetization(old)
+        if old != new:
+            item["monetization"] = new
+            canon_count += 1
+    print(f"  → 变现路径归一化 {canon_count} 条")
 
     # 写入合并 JSON（喂 build_excel 用）
     MERGED_JSON.write_text(

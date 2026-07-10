@@ -9,7 +9,7 @@ from urllib.parse import quote
 # PRD 4.3 节规定的 URL 模板
 INTITLE_URL = "https://www.google.com/search?q=intitle:%22{kw}%22&hl=en&gl=us"
 SERP_URL = "https://www.google.com/search?q={kw}&hl=en&gl=us"
-TRENDS_URL = "https://trends.google.com/trends/explore?q={kw}&geo=US&date=today%201-m"
+TRENDS_URL = "https://trends.google.com/trends/explore?q={kw}&date=today%201-m"
 AHREFS_URL = "https://ahrefs.com/keyword-difficulty/?country=us&input={kw}"
 
 
@@ -24,7 +24,7 @@ def build_serp_url(keyword: str) -> str:
 
 
 def build_trends_url(keyword: str) -> str:
-    """谷歌趋势 URL（30 天）。模板中 %201-m 段保留，编码关键词。"""
+    """谷歌趋势 URL（30 天，全球视图）。模板中 %201-m 段保留，编码关键词。不带 geo 参数即默认全球。"""
     return TRENDS_URL.replace("{kw}", quote(keyword, safe=""))
 
 

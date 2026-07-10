@@ -178,24 +178,25 @@ def _cell_value(item: dict, col_idx: int):
 
 
 def _add_data_validation(ws, last_row: int):
-    """给"收藏"列加下拉框（v1.5：含"收藏 / 丢弃"两个选项，均手动独立）。
+    """给"收藏"列加下拉框（v1.6：含"收藏 / 丢弃 / 红利"三个选项，均手动独立）。
 
     行为：
     - 默认空 = 不标记
     - 下拉选"收藏" = 标记为收藏
     - 下拉选"丢弃" = 标记为丢弃
+    - 下拉选"红利" = 标记为流量红利词（必须马上做、否则过期）
     - 单元格内容清空（Delete 键）= 取消标记
-    - v1.5：与「建议」列不联动，由用户手动区分
+    - v1.5 起：与「建议」列不联动，由用户手动区分
     """
     dv = DataValidation(
         type="list",
-        formula1='"收藏,丢弃"',  # v1.5：新增"丢弃"选项
+        formula1='"收藏,丢弃,红利"',  # v1.6：新增"红利"选项
         allow_blank=True,
         showErrorMessage=True,
     )
-    dv.prompt = "选择『收藏』收藏此词，选择『丢弃』丢弃此词，留空表示不标记"
+    dv.prompt = "选择『收藏』收藏、『丢弃』丢弃、『红利』标记流量红利词（必须马上做），留空表示不标记"
     dv.promptTitle = "标记词"
-    dv.error = "请选择『收藏』『丢弃』或留空"
+    dv.error = "请选择『收藏』『丢弃』『红利』或留空"
     dv.errorTitle = "无效输入"
     ws.add_data_validation(dv)
     # v1.4：收藏列仍在第 8 列（H 列），不变

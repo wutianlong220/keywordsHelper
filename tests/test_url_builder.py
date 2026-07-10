@@ -53,12 +53,12 @@ class TestBuildSerpUrl:
 class TestBuildTrendsUrl:
     def test_普通关键词(self):
         url = build_trends_url("zerogpt")
-        # 模板中 date=today%201-m 的 %20 是硬编码，保留
-        assert url == "https://trends.google.com/trends/explore?q=zerogpt&geo=US&date=today%201-m"
+        # 模板中 date=today%201-m 的 %20 是硬编码，保留；不带 geo 参数即默认全球
+        assert url == "https://trends.google.com/trends/explore?q=zerogpt&date=today%201-m"
 
     def test_带空格(self):
         url = build_trends_url("thunderstorm tracker uk")
-        assert url == "https://trends.google.com/trends/explore?q=thunderstorm%20tracker%20uk&geo=US&date=today%201-m"
+        assert url == "https://trends.google.com/trends/explore?q=thunderstorm%20tracker%20uk&date=today%201-m"
 
 
 class TestBuildAhrefsUrl:
